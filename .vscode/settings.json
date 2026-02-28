@@ -1,0 +1,18 @@
+{
+  "java.project.sourcePaths": [
+    "."
+  ],
+  "java.project.referencedLibraries": [],
+
+  "java.jdt.ls.java.home": "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.4.7-hotspot",
+
+  "java.configuration.runtimes": [
+    {
+      "name": "JavaSE-21",
+      "path": "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.4.7-hotspot",
+      "default": true
+    }
+  ],
+
+  "java.project.sourceRelease": 21
+}
