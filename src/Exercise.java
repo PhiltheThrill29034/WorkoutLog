@@ -7,7 +7,8 @@ import java.util.Set;
 import java.util.EnumSet;
 import java.util.UUID;
 
-
+//Exercise class. Represents the template of the Exercise
+//Holds values like : name , description , muscles trained
 
 class Exercise {
 
