@@ -1,7 +1,26 @@
 import java.util.Scanner;
 import java.util.function.*;
 import java.lang.Double;
+
 public class InputUtils {
+
+
+    static String readNonEmpty (Scanner in, String prompt){
+        System.out.println(prompt);
+        String input = in.nextLine();
+        while (input.isBlank()) {
+            System.out.print("Provide a valid value: ");  
+            input = in.nextLine();
+        }
+
+        return input;
+    }
+
+    static String readOptional(Scanner in, String prompt, String defaultVal){
+        System.out.print(prompt);
+        String input = in.nextLine();
+        return (input.isBlank()) ? defaultVal : input;
+    }
 
     static <T extends Number> T readNumberAndRetry(Scanner in,String prompt,String errorPrompt,Function<String,T> parser,T minRange,T maxRange){
         System.out.print(prompt);
