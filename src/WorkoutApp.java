@@ -440,18 +440,8 @@ public class WorkoutApp {
 
     private void createCustom(){
         System.out.println("===== CREATE CUSTOM EXERCISE =====");
-        System.out.print("1. Name : ");
-        String name = in.nextLine().trim();
-        while (name.isEmpty()){
-            System.out.print("Please give a name to the exercise: ");
-            name = in.nextLine().trim();
-        }
-        System.out.println("2. Choose Muscles Trained: "); 
-        EnumSet<Muscles> selected= pickMuscles();
-        System.out.print("3. Give a desciption (optional): ");
-        String desc=in.nextLine().trim();
-        if (desc.isEmpty()) desc= "No description";
-        Exercise e = Exercise.createCustom(name, desc, selected);
+        CustomData data = promptCustomCreate();
+        Exercise e = Exercise.createCustom(data.name(), data.desc(), data.muscles());
         exMenu.add(e);
         exercisebyId.put(e.getId(),e);
     }
@@ -634,5 +624,45 @@ public class WorkoutApp {
                 checkPr(pe.getExercise(), maxVolume, volumePr);
             }
         }
+
+        
     }
+
+    private CustomData promptCustomCreate(){
+
+        String name = InputUtils.readNonEmpty(in, "Name: ");
+        System.out.println("2. Choose Muscles Trained: "); 
+        EnumSet<Muscles> selected = pickMuscles();
+        System.out.print("3. Give a desciption (optional): ");
+        String desc= InputUtils.readOptional
+        (in, "Give a description : ", "No description");
+        return new CustomData(name, desc, selected);
+    }
+
+    private CustomData promptCustomEdit(Exercise original){
+
+        System.out.println("Editing : "+original.getName());
+        String name = InputUtils.readOptional
+        (in, "Pick a new name (blank=keep): ",original.getName());
+        System.out.print("Repick Muscles? (y/n): ");
+        EnumSet<Muscles> selected;
+        if (in.nextLine().equals("y")) {
+            selected = pickMuscles();
+        } else {
+            selected = EnumSet.copyOf(original.getMuscles());
+        }
+
+        String desc = InputUtils.readOptional
+        (in, "Give a description (blank=keep) : ", original.getDesc());
+        
+        return new CustomData(name, desc, selected);
+
+    }
+
+    private List<Exercise> getCustomExercises() {
+            return exMenu.stream().filter(e -> e.getType()==null).toList();
+    }
+    
+
+    private record CustomData(String name, String desc , EnumSet<Muscles> muscles) {};
 }
