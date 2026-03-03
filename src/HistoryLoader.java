@@ -177,8 +177,9 @@ public class HistoryLoader {
         Exercise base = null;
 
         if ("CUSTOM".equals(kind)&&id==null){ //throw an error if ID is empty for a custom
-            throw new IllegalArgumentException("ID for custom exercise cannot be empty.")
+            throw new IllegalArgumentException("ID for custom exercise cannot be empty.");
         }
+
         if (id!=null){
             base = exerciseById.get(id);
         }
@@ -189,7 +190,7 @@ public class HistoryLoader {
             //uniquely identified by the name anyways
                 try{
                     ExerciseType type = ExerciseType.valueOf(name);
-                    base = Exercise.fromType(type);
+                    base = ExerciseFactory.fromType(type);
                     //try catch block in case the enum doesn't exist
                 }
                 catch (Exception e){
@@ -201,7 +202,7 @@ public class HistoryLoader {
                     throw new IllegalStateException("Muscles values for custom exercise at line "+ start + "cannot be empty");
                 
 
-                base = Exercise.loadCustom(id,name,desc,muscles);
+                base = ExerciseFactory.loadCustom(id,name,desc,muscles);
 
             }
 
@@ -249,6 +250,8 @@ public class HistoryLoader {
         }
     
     }
+
+
 
     public record LoadResult(
         List<WorkoutSession> sessions,

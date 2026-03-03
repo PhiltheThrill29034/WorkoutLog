@@ -1,4 +1,4 @@
-//package java_practice.WorkoutLog;
+
 
 import java.util.List;
 import java.util.Objects;
@@ -26,8 +26,8 @@ class Exercise {
     
 
     
-
-    private Exercise(UUID id,ExerciseType type, String name,String desc, Set<Muscles> muscles){
+    //no publicity identifier - package private so only factory in the same package can use it
+    Exercise(UUID id,ExerciseType type, String name,String desc, Set<Muscles> muscles){ 
         
         this.id=id;
         this.type=type;
@@ -37,34 +37,6 @@ class Exercise {
         
     }
 
-    public static Exercise createCustom(String name,String desc, Set<Muscles> muscles){
-
-        if (name==null||name.isBlank()) 
-            throw new IllegalArgumentException("Name cannot be empty");
-        if (muscles==null||muscles.isEmpty()) 
-            throw new IllegalArgumentException("Muscles cannot be empty.");
-        return new Exercise(UUID.randomUUID(),null,name,desc,muscles);
-        
-    }
-
-    public static Exercise loadCustom(UUID id,String name, String desc, Set<Muscles> muscles){
-        if (id==null)
-            throw new IllegalArgumentException("Id for loaded custom exercise cannot be null");
-        return new Exercise(id, null,name,desc,muscles);
-    }
-
-    public static Exercise fromType (ExerciseType type){
-
-        if (type==null) throw new IllegalArgumentException("Exercise Type cannot be empty");
-        return new Exercise(UUID.nameUUIDFromBytes(("TYPE: "+type.name()).getBytes()), type, null, null, null);
-        
-    }
-
-    public static Exercise freshCopyOf(Exercise other){ //copies an exercise, passing the name and muscles. doesn't copy the sets
-        return (other.type==null) ? 
-        Exercise.loadCustom(other.id,other.customName,other.customDesc,other.customMusclesTrained) :
-        Exercise.fromType(other.type);
-    }
     
     
 

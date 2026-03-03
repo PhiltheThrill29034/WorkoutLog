@@ -22,7 +22,7 @@ public class WorkoutRoutine {
     public WorkoutRoutine(WorkoutRoutine other){
         this.routineName=other.routineName;
         for (Exercise e: other.routine){
-            routine.add(Exercise.freshCopyOf(e));
+            routine.add(ExerciseFactory.freshCopyOf(e));
         }
     }
 

@@ -59,7 +59,7 @@ public class WorkoutApp {
         exMenu.clear();
         exercisebyId.clear();
         for (ExerciseType exT:ExerciseType.values()){
-            Exercise ex=Exercise.fromType(exT);
+            Exercise ex=ExerciseFactory.fromType(exT);
             exercisebyId.put(ex.getId(),ex);
             exMenu.add(ex);
 
@@ -168,7 +168,7 @@ public class WorkoutApp {
             boolean dup = routine.contains(template);
             if (!dup){
                 Exercise ex = 
-                Exercise.freshCopyOf(template);
+                ExerciseFactory.freshCopyOf(template);
                 
                 System.out.println(ex.details());
                 System.out.print("Add exercise? (type n/no to cancel): ");
@@ -291,7 +291,7 @@ public class WorkoutApp {
         int choice=InputUtils.readIntAndRetry(this.in,"Choose one of the following exercises to add, or 0 to finish adding: ", "Pick a valid exercise number: ",0,exMenu.size());
         while (choice!=0){
             Exercise template=exMenu.get(choice-1);
-            Exercise ex = Exercise.freshCopyOf(template);
+            Exercise ex = ExerciseFactory.freshCopyOf(template);
             if (!picked.addExercise(ex)){
                 System.out.printf("Cannot add %s twice.%n",ex.getName());
             }else {
@@ -441,7 +441,7 @@ public class WorkoutApp {
     private void createCustom(){
         System.out.println("===== CREATE CUSTOM EXERCISE =====");
         CustomData data = promptCustomCreate();
-        Exercise e = Exercise.createCustom(data.name(), data.desc(), data.muscles());
+        Exercise e = ExerciseFactory.createCustom(data.name(), data.desc(), data.muscles());
         exMenu.add(e);
         exercisebyId.put(e.getId(),e);
     }
