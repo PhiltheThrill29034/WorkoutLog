@@ -79,7 +79,7 @@ public class PerformedExercise {
         sb.append("--").append(getName()).append("--\n");
         if (sets.isEmpty()) sb.append("\tNo sets for this exercise yet\n");
         for (int i=0;i<sets.size();i++){
-            sb.append("\tSet ").append(i+1).append(": ").append(sets.get(i)).append("\n");  
+            sb.append(" Set ").append(i+1).append(": ").append(sets.get(i)).append("\n");  
         }
         
         for (int i=0;i<getName().length();i++){

@@ -6,7 +6,7 @@ public class InputUtils {
 
 
     static String readNonEmpty (Scanner in, String prompt){
-        System.out.println(prompt);
+        System.out.print(prompt);
         String input = in.nextLine();
         while (input.isBlank()) {
             System.out.print("Provide a valid value: ");  

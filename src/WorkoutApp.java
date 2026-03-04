@@ -20,7 +20,7 @@ public class WorkoutApp {
     List<WorkoutSession> history; 
     Map<Exercise,Double> weightPr;
     Map<Exercise,Double> volumePr;
-    Map<UUID,Exercise> exercisebyId = new HashMap<>();
+    Map<UUID,Exercise> exerciseById = new HashMap<>();
     private final List<String> menuLabels = List.of(
         "Exit",
         "Start Routine",
@@ -28,6 +28,7 @@ public class WorkoutApp {
         "Edit Routine",
         "List Routines",
         "Create Custom Exercise",
+        "Edit Custom Exercise",
         "View/Edit History"
         
     );
@@ -44,6 +45,7 @@ public class WorkoutApp {
         this::editRoutine,
         this::listRoutines,
         this::createCustom,
+        this::editCustom,
         this::viewHistory 
     );
 
@@ -57,10 +59,10 @@ public class WorkoutApp {
         saver = new HistorySaver(p);
         loader = new HistoryLoader(p);
         exMenu.clear();
-        exercisebyId.clear();
+        exerciseById.clear();
         for (ExerciseType exT:ExerciseType.values()){
             Exercise ex=ExerciseFactory.fromType(exT);
-            exercisebyId.put(ex.getId(),ex);
+            exerciseById.put(ex.getId(),ex);
             exMenu.add(ex);
 
         }
@@ -71,7 +73,7 @@ public class WorkoutApp {
         System.out.println("INITIALIZING GAIN ENGINE...");
         List<String> warnings;
         try{
-            HistoryLoader.LoadResult lr = loader.loadAllSessions(exercisebyId);
+            HistoryLoader.LoadResult lr = loader.loadAllSessions(exerciseById);
             history = lr.sessions();
             warnings = lr.warnings();
             
@@ -443,7 +445,49 @@ public class WorkoutApp {
         CustomData data = promptCustomCreate();
         Exercise e = ExerciseFactory.createCustom(data.name(), data.desc(), data.muscles());
         exMenu.add(e);
-        exercisebyId.put(e.getId(),e);
+        exerciseById.put(e.getId(),e);
+    }
+
+    private void editCustom(){
+        List<Exercise> customs = getCustomExercises();
+        if (customs.isEmpty()){
+            System.out.println("No custom exercises created yet");
+            return;
+        }
+
+        int i=1;
+        System.out.println("Pick a custom exercise to edit (0 to exit): ");
+        System.out.println("====CUSTOM EXERCISES====");
+        for (Exercise custom: customs){
+            System.out.printf("%d. %s%n",i,custom.getName());
+            i++;
+        }
+        System.out.println("========================");
+
+        int choice = InputUtils.readIntAndRetry(in, "-> ","Invalid choice, try again: ",0,
+        customs.size());
+
+        if (choice == 0) return;
+
+        System.out.println("1. Edit details");
+        System.out.println("2. Delete exercise");
+        System.out.println("0. Exit");
+
+        int editChoice = InputUtils.readIntAndRetry(in,"->","Invalid choice, try again: ",0,2);
+
+        switch (editChoice){
+
+            case 0 -> {return;}
+
+            case 1 -> {
+                CustomData editData = promptCustomEdit(customs.get(choice-1));
+
+            }
+
+            case 2 -> {
+                handleCustomDeletion(customs.get(choice-1));
+            }
+        }
     }
 
     private EnumSet<Muscles> pickMuscles(){
@@ -457,7 +501,7 @@ public class WorkoutApp {
                 (selected.contains(m)) ? "(selected)" : "");
             }
 
-            System.out.printf("Pick a muscle group (%c-%c): %n->",'a',(char) ('a'+all.length-1));
+            System.out.printf("Pick a muscle group (%c-%c), or 0 to finish adding: %n->",'a',(char) ('a'+all.length-1));
             String input=in.nextLine().trim();
             
 
@@ -630,12 +674,11 @@ public class WorkoutApp {
 
     private CustomData promptCustomCreate(){
 
-        String name = InputUtils.readNonEmpty(in, "Name: ");
+        String name = InputUtils.readNonEmpty(in, "1. Name: ");
         System.out.println("2. Choose Muscles Trained: "); 
         EnumSet<Muscles> selected = pickMuscles();
-        System.out.print("3. Give a desciption (optional): ");
         String desc= InputUtils.readOptional
-        (in, "Give a description : ", "No description");
+        (in, "Give a description (optional): ", "No description");
         return new CustomData(name, desc, selected);
     }
 
@@ -657,6 +700,26 @@ public class WorkoutApp {
         
         return new CustomData(name, desc, selected);
 
+    }
+
+    private void handleCustomDeletion(Exercise toDelete){
+
+        String confirm = InputUtils.readOptional(in, "Type \"yes\" to confirm deletion or enter to cancel: " ,"");
+        if (!confirm.equals("yes")) {
+            System.out.println("Cancelled.");
+            return;
+        }
+
+        exerciseById.remove(toDelete.getId());
+
+        for (WorkoutRoutine routine : routines.values()){
+            routine.getExerciseList().removeIf(e -> e.getId().equals(toDelete.getId()));
+        }
+
+        exMenu.remove(toDelete);
+
+        System.out.println("Nuked.");
+        
     }
 
     private List<Exercise> getCustomExercises() {
