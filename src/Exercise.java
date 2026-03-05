@@ -39,9 +39,11 @@ class Exercise {
 
     
     
-
-
     public String getName(){
+        return (type != null) ? type.getName() : this.customName;
+    }
+
+    public String getDisplayName(){
         return (getType()!=null) ? type.getName() : this.customName+" [CUSTOM]";
     }
 
@@ -89,7 +91,7 @@ class Exercise {
         sb.append("Name : ").append(getName()).append("\n");
         sb.append("Muscles Trained : \n");
         sb.append(formatMuscles()).append("\n");
-        sb.append("Description:\n").append(getDesc());
+        sb.append("Description:\n").append(getDesc()).append("\n");
         sb.append("==========================\n");
         return sb.toString();
 

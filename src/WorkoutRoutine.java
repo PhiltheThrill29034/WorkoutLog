@@ -5,34 +5,34 @@ import java.util.HashMap;
 
 public class WorkoutRoutine {
     private String routineName;
-    private List<Exercise> routine;
+    private List<Exercise> exercises;
     
 
 
     public WorkoutRoutine(String name){
         this.routineName=name;
-        routine=new ArrayList<>();
+        exercises=new ArrayList<>();
             
     }
 
     public List<Exercise> getExerciseList(){
-        return this.routine;
+        return this.exercises;
     }
 
     public WorkoutRoutine(WorkoutRoutine other){
         this.routineName=other.routineName;
-        for (Exercise e: other.routine){
-            routine.add(ExerciseFactory.freshCopyOf(e));
+        for (Exercise e: other.exercises){
+            exercises.add(ExerciseFactory.freshCopyOf(e));
         }
     }
 
     public Exercise getExercise(int index){
-        return routine.get(index);
+        return exercises.get(index);
     }
 
     public boolean contains(Exercise e){
         if (e==null) return false;
-        for (Exercise ex: routine){
+        for (Exercise ex: exercises){
             if (e.equals(ex)){
                 return true;
             }
@@ -42,24 +42,24 @@ public class WorkoutRoutine {
 
     public boolean addExercise(Exercise ex){
         if (contains(ex)) return false;
-        routine.add(ex);
+        exercises.add(ex);
         return true;
     }
 
     
 
     public void removeExercise(int index){
-        if (index<0 || index>=routine.size()) {
+        if (index<0 || index>=exercises.size()) {
             System.out.println("Invalid exercise number.");
             return;
         }
-        routine.remove(index);
+        exercises.remove(index);
     }
     public void removeExercise(Exercise e){
 
-        for (int i=0;i<routine.size();i++){
-            if (routine.get(i).equals(e)){
-                routine.remove(i);
+        for (int i=0;i<exercises.size();i++){
+            if (exercises.get(i).equals(e)){
+                exercises.remove(i);
                 return;
             }
         }
@@ -74,7 +74,7 @@ public class WorkoutRoutine {
             return sb.toString();
         }
         int count=1;
-        for (Exercise ex: routine){
+        for (Exercise ex: exercises){
             sb.append(count).append(". ").append(ex.getName()).append("\n");
             count++;
         }
@@ -86,7 +86,7 @@ public class WorkoutRoutine {
         StringBuilder sb=new StringBuilder();
         sb.append("Routine: ").append(getName()).append("\n");
         if (getRoutineSize()==0) return sb.toString()+"No exercises for this routine";
-        for (Exercise ex: routine){
+        for (Exercise ex: exercises){
             sb.append("\t").append(ex).append("\n");
         }
         return sb.toString();
@@ -101,8 +101,10 @@ public class WorkoutRoutine {
     }
 
     public int getRoutineSize(){
-        return routine.size();
+        return exercises.size();
     }
+
+    
 
 
 

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -231,7 +232,7 @@ public class WorkoutApp {
     private void printExerciseList(WorkoutRoutine r){
         int count=1;    
         for (Exercise ex:exMenu){
-            System.out.printf("%d. %s %s%n",count,ex.getName(),(r.contains(ex)) ? "[SELECTED]" : "");
+            System.out.printf("%d. %s %s%n",count,ex.getDisplayName(),(r.contains(ex)) ? "[SELECTED]" : "");
             count++;
         }
     }
@@ -473,21 +474,37 @@ public class WorkoutApp {
         System.out.println("2. Delete exercise");
         System.out.println("0. Exit");
 
+        
         int editChoice = InputUtils.readIntAndRetry(in,"->","Invalid choice, try again: ",0,2);
-
+        
+        Exercise oldEx = customs.get(choice-1);
         switch (editChoice){
 
-            case 0 -> {return;}
 
-            case 1 -> {
-                CustomData editData = promptCustomEdit(customs.get(choice-1));
+            case 1 -> {     
+                CustomData editData = promptCustomEdit(oldEx);
+                Exercise newEx = ExerciseFactory.loadCustom(oldEx.getId(), editData.name(), editData.desc(),editData.muscles());
+                syncExerciseState(oldEx, newEx);
 
+                System.out.println("Changes updated.");
             }
 
             case 2 -> {
-                handleCustomDeletion(customs.get(choice-1));
+                String confirm = InputUtils.readOptional(in, "Type \"yes\" to confirm deletion or enter to cancel: " ,"");
+                if (!confirm.equals("yes")) {
+                    System.out.println("Cancelled.");
+                    return;
+                }
+
+                syncExerciseState(oldEx,null);
+
+                System.out.println("Nuked.");
+                
             }
+            
         }
+
+
     }
 
     private EnumSet<Muscles> pickMuscles(){
@@ -702,28 +719,29 @@ public class WorkoutApp {
 
     }
 
-    private void handleCustomDeletion(Exercise toDelete){
-
-        String confirm = InputUtils.readOptional(in, "Type \"yes\" to confirm deletion or enter to cancel: " ,"");
-        if (!confirm.equals("yes")) {
-            System.out.println("Cancelled.");
-            return;
-        }
-
-        exerciseById.remove(toDelete.getId());
-
-        for (WorkoutRoutine routine : routines.values()){
-            routine.getExerciseList().removeIf(e -> e.getId().equals(toDelete.getId()));
-        }
-
-        exMenu.remove(toDelete);
-
-        System.out.println("Nuked.");
-        
-    }
+    
 
     private List<Exercise> getCustomExercises() {
             return exMenu.stream().filter(e -> e.getType()==null).toList();
+    }
+
+    private void syncExerciseState(Exercise oldEx,Exercise newEx){
+
+        if (newEx!=null){
+            exerciseById.put(newEx.getId(),newEx);
+            routines.values().forEach(r -> {
+                List<Exercise> updated = r.getExerciseList();
+                Collections.replaceAll(updated, oldEx, newEx);
+            });
+            int idx = exMenu.indexOf(oldEx);
+            if (idx!=-1) exMenu.set(idx,newEx);
+            
+        } else {
+            exerciseById.remove(oldEx.getId());
+            routines.values().forEach(r->r.getExerciseList().removeIf(oldEx::equals));
+            exMenu.remove(oldEx);
+            
+        }
     }
     
 
