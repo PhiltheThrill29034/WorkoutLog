@@ -41,53 +41,39 @@ public class HistoryStorage {
 
     private static List<WorkoutSession> parseAllSessions(List<String> lines,List<String> warnings,Map<UUID,Exercise> exerciseById){
 
-        List<WorkoutSession> sList = new ArrayList<>();
-        int idx=0;
-
-        while (idx<lines.size()){
-            String line = lines.get(idx).trim();
-            if (line.isEmpty()) {idx++; continue;}
-            if (line.equals("WORKOUT SESSION")){
+        List<List<String>> blocks = ParsingUtils.extractBlocks(lines, SESSION_START, SESSION_END);
+        List<WorkoutSession> sessionList = new ArrayList<>();
+        int count=0;
+        for (List<String> block: blocks){
+                count++;
                 try {
-                    ParseResult<WorkoutSession> result = parseSession(lines, idx,exerciseById);
-                    sList.add(result.value);
-                    idx = result.nextIdx;
-                    continue;
+                    WorkoutSession result = parseSession(block, exerciseById);
+                    sessionList.add(result);
                 } catch (IllegalStateException e){
-                    warnings.add("Skipping invalid session at line "+idx);
+                    warnings.add("Skipping invalid session at block "+count);
                     warnings.add("👉 REASON: " + e.getMessage());
                     
                     if (e.getCause() != null) {
                         warnings.add("🔍 ROOT CAUSE: " + e.getCause().getMessage());
                     }
-                    idx++;
-                    while (idx < lines.size() && !lines.get(idx).trim().equals("WORKOUT SESSION")){
-                        idx++;
-                    }
-                    //while loop restores the state of the parser. loops through garbage state and
-                    //stops when it meets a new WorkoutSession
-                    continue; // so we don't fall in outer loop
+                    
                 }
-            }
-
-            idx++;
         }
 
-        return sList;
-
+        return sessionList;
     }
 
 
-    private static ParseResult<WorkoutSession> parseSession (List<String> lines,int start,Map<UUID,Exercise> exerciseById){
-        List<PerformedExercise> eList = new ArrayList<>();
+    private static WorkoutSession parseSession (List<String> sessionLines,Map<UUID,Exercise> exerciseById){
+        
         LocalDateTime stamp = null;
         String routineName="";
-        int idx = start;
-        while (idx < lines.size()){
-            String line = lines.get(idx).trim();
-            if (line.isEmpty()) {idx++; continue;}
+        int idx=0;
+        for (String line : sessionLines){
+            idx++;
+            line = line.trim();
             if (line.startsWith("DATE")){
-                String raw = valueAfterColon(line);
+                String raw = FormatUtils.valueAfterColon(line);
                 try {
                     stamp = LocalDateTime.parse(raw);
                 }
@@ -97,38 +83,30 @@ public class HistoryStorage {
             }
 
             else if (line.startsWith("ROUTINE")){
-                routineName = valueAfterColon(line);
+                routineName = FormatUtils.valueAfterColon(line);
             } 
 
-            else if (line.startsWith("EXERCISE")){
-                ParseResult<PerformedExercise> result = parseOneExercise(lines, idx+1,exerciseById);
-                eList.add(result.value);
-                idx = result.nextIdx;
-                continue; //if we didnt use continue, start ++ would happen at the bottom and we would skip a line
-
-            }
-
-            else if (line.startsWith("END_SESSION")){
-                break;
-            }
-            idx ++;
         }
 
         if (stamp==null){
-            throw new IllegalStateException("Workout Session at line "+ start + "missing DATE value");
+            throw new IllegalStateException("Workout Session  missing DATE value");
         }
 
         if (routineName==null || routineName.isBlank()){
-            throw new IllegalStateException("Workout Session at line "+ start + "missing ROUTINE value");
+            throw new IllegalStateException("Workout Session missing ROUTINE value");
+        }
+        
+        List<PerformedExercise> eList = new ArrayList<>();
+        List<List<String>> sessionExercises = ParsingUtils.extractBlocks(sessionLines, EX_START, EX_END);
+        for (List<String> exercise: sessionExercises){
+            parseOneExercise(exercise,exerciseById);
         }
 
-
+        return new WorkoutSession(routineName,stamp,eList);
         
-        WorkoutSession s = new WorkoutSession(routineName,stamp,eList);
-        return new ParseResult<>(s, idx+1);
     }
 
-    private static ParseResult<PerformedExercise> parseOneExercise(List<String> lines,int start,Map<UUID,Exercise> exerciseById){
+    private static PerformedExercise parseOneExercise(List<String> lines ,Map<UUID,Exercise> exerciseById){
         String kind = null;
         String name = null;
         String desc = null;
@@ -136,35 +114,36 @@ public class HistoryStorage {
         boolean deleted = false;
         PerformedExercise pe = null;
         Set<Muscles> muscles = null;
-        int idx = start;
+        int idx = 0;
         List<WorkoutSet> sets = new ArrayList<>();
-        while (idx<lines.size()){
-            String line = lines.get(idx).trim();
-            if (line.isEmpty()) {idx++; continue;}
-            else if (line.startsWith("ID")) {id = UUID.fromString(valueAfterColon(line));}
-            else if (line.startsWith("KIND"))  {kind = valueAfterColon(line);}
-            else if (line.startsWith("NAME")) {name = valueAfterColon(line);}
-            else if (line.startsWith("DESC")){desc = valueAfterColon(line);}
+        for (String line: lines){
+            idx++;
+            line=line.trim();
+            
+            if (line.startsWith("ID")) {id = UUID.fromString(FormatUtils.valueAfterColon(line));}
+            else if (line.startsWith("KIND"))  {kind = FormatUtils.valueAfterColon(line);}
+            else if (line.startsWith("NAME")) {name = FormatUtils.valueAfterColon(line);}
+            else if (line.startsWith("DESC")){desc = FormatUtils.valueAfterColon(line);}
             else if (line.startsWith("MUSCLES")) {
                 try{
-                    muscles = parseMuscles(valueAfterColon(line));
+                    muscles = parseMuscles(FormatUtils.valueAfterColon(line));
                 }
                 catch (IllegalStateException e){
                     throw new IllegalStateException
-                    ("Illegal muscle values in custom exercise at line "+start,e);
+                    ("Illegal muscle values in custom exercise at line "+idx,e);
                     //this is excpetion chaining
                     //the exception is thrown and we pass as a parameter the cause (e), the
                     //exception that parseMuscles threw
                 }
             }
             else if (line.startsWith("SET")){
-                String values = valueAfterColon(line);
+                String values = FormatUtils.valueAfterColon(line);
                 String[] parts = values.split(",");
                 double weight = Double.parseDouble(parts[0]);
                 int reps = Integer.parseInt(parts[1]);
                 sets.add(new WorkoutSet(weight,reps));
             }
-            else if (line.startsWith("END_EX")){
+            else if (line.startsWith(EX_END)){
                 break;
             }
 
@@ -172,11 +151,11 @@ public class HistoryStorage {
         }
 
         if (kind == null || kind.isBlank()) {
-            throw new IllegalStateException("Exercise at line " + start + " missing KIND value.");
+            throw new IllegalStateException("Exercise missing KIND value.");
         }
 
         if (name==null||name.isBlank()){
-            throw new IllegalStateException("Exercise at line " + start + " missing NAME value.");
+            throw new IllegalStateException("Exercise missing NAME value.");
         }
 
         Exercise base = null;
@@ -199,12 +178,12 @@ public class HistoryStorage {
                     //try catch block in case the enum doesn't exist
                 }
                 catch (Exception e){
-                    throw new IllegalStateException("Exercise at line " + start + " has an unknown type value: ["+name+"]");
+                    throw new IllegalStateException("Exercise has an unknown type value: ["+name+"]");
                 }
             } else if ("CUSTOM".equals(kind)) {
                 deleted = true;
                 if (muscles==null||muscles.isEmpty())
-                    throw new IllegalStateException("Muscles values for custom exercise at line "+ start + "cannot be empty");
+                    throw new IllegalStateException("Muscles values for custom exercise cannot be empty");
                 
 
                 base = ExerciseFactory.loadCustom(id,name,desc,muscles);
@@ -220,7 +199,7 @@ public class HistoryStorage {
             pe.addSet(s);
         }
         
-        return new ParseResult<>(pe, idx+1);
+        return pe;
     }
 
     private static Set<Muscles> parseMuscles(String line){
@@ -240,21 +219,10 @@ public class HistoryStorage {
         return m;
     }
 
-    private static String valueAfterColon(String line){
-        int idx = line.indexOf(":");
-        return (idx>=0) ? line.substring(idx+1) : "";
-    }
-
-
-    private static class ParseResult<T>{
-        T value;
-        int nextIdx;
-        ParseResult(T value, int nextIdx){
-            this.value=value;
-            this.nextIdx=nextIdx;
-        }
     
-    }
+
+
+    
 
 
 
@@ -331,8 +299,6 @@ public class HistoryStorage {
 
 
     }
-
-    
 
 
 }
