@@ -91,7 +91,7 @@ public class WorkoutSession {
         sb.append("Workout on ").append(getFormattedDate()).append("\n");
         sb.append("=====").append(routineName.toUpperCase()).append("=====\n");
         for (PerformedExercise e : sessionExercises){
-            sb.append("\t").append(e).append("\n");
+            sb.append(e).append("\n");
         }
         sb.append("=====");
         for (int i=0;i<routineName.length();i++){
