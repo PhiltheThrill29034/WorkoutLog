@@ -113,13 +113,10 @@ public class CustomStorage {
             
         }
 
-        if (kind == null || kind.isBlank()) {
-            throw new IllegalStateException("Exercise missing KIND value.");
-        }
+        ParsingUtils.validateStringInput(kind, "KIND", 20);
 
-        if (name==null||name.isBlank()){
-            throw new IllegalStateException("Exercise missing NAME value.");
-        }
+        ParsingUtils.validateStringInput(name, "NAME", 100);
+
 
         if (id==null){
             throw new IllegalStateException("Exercise missing ID value.");
