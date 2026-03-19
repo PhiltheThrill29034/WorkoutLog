@@ -53,4 +53,14 @@ public final class ParsingUtils {
         return blocks;
     }
 
+    public static void validateStringInput(String input, String field, int maxLen){
+
+        if (input==null || input.isBlank()){
+            throw new IllegalStateException ("ERROR: ["+field+"] cannot be empty");
+        } else if (input.length()>maxLen){
+            throw new IllegalStateException ("ERROR: ["+field+"] exceeds max length of "+maxLen);
+        }
+    }
+
+
 }
