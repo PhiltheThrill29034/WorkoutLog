@@ -1,4 +1,5 @@
-enum Muscles {
+package com.gainengine.model;
+public enum Muscles {
     
     CHEST("Chest"),
     SHOULDERS("Shoulders"),

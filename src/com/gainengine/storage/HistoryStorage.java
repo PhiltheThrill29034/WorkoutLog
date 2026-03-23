@@ -1,3 +1,4 @@
+package com.gainengine.storage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -7,6 +8,18 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
+import com.gainengine.logic.ExerciseFactory;
+import com.gainengine.logic.ExerciseLibrary;
+import com.gainengine.model.Exercise;
+import com.gainengine.model.ExerciseType;
+import com.gainengine.model.Muscles;
+import com.gainengine.model.PerformedExercise;
+import com.gainengine.model.WorkoutSession;
+import com.gainengine.model.WorkoutSet;
+import com.gainengine.utils.FormatUtils;
+import com.gainengine.utils.ParsingUtils;
+
 import java.util.Map;
 
 
@@ -22,24 +35,24 @@ public class HistoryStorage {
 
     private final Path path;
 
-    HistoryStorage(Path path){
+    public HistoryStorage(Path path){
         this.path=path;
     }
 
-    public LoadResult loadAllSessions(Map<UUID,Exercise> exerciseById) throws IOException{
+    public LoadResult loadAllSessions(ExerciseLibrary library) throws IOException{
         
             if (!Files.exists(path)){
                 return new LoadResult(new ArrayList<>(), new ArrayList<>());
             }
             List<String> lines = Files.readAllLines(path);
             List<String> warnings = new ArrayList<>();
-            List<WorkoutSession> sList = parseAllSessions(lines, warnings,exerciseById);
+            List<WorkoutSession> sList = parseAllSessions(lines, warnings,library);
             return new LoadResult(sList, warnings); 
     }
 
     
 
-    private static List<WorkoutSession> parseAllSessions(List<String> lines,List<String> warnings,Map<UUID,Exercise> exerciseById){
+    private static List<WorkoutSession> parseAllSessions(List<String> lines,List<String> warnings,ExerciseLibrary library){
 
         List<List<String>> blocks = ParsingUtils.extractBlocks(lines, SESSION_START, SESSION_END);
         List<WorkoutSession> sessionList = new ArrayList<>();
@@ -47,7 +60,7 @@ public class HistoryStorage {
         for (List<String> block: blocks){
                 count++;
                 try {
-                    WorkoutSession result = parseSession(block, exerciseById);
+                    WorkoutSession result = parseSession(block, library);
                     sessionList.add(result);
                 } catch (IllegalStateException e){
                     warnings.add("Skipping invalid session at block "+count);
@@ -64,7 +77,7 @@ public class HistoryStorage {
     }
 
 
-    private static WorkoutSession parseSession (List<String> sessionLines,Map<UUID,Exercise> exerciseById){
+    private static WorkoutSession parseSession (List<String> sessionLines,ExerciseLibrary library){
         
         LocalDateTime stamp = null;
         String routineName="";
@@ -89,24 +102,31 @@ public class HistoryStorage {
         }
 
         if (stamp==null){
-            throw new IllegalStateException("Workout Session  missing DATE value");
+            throw new IllegalStateException("Workout Session missing DATE value");
         }
 
-        if (routineName==null || routineName.isBlank()){
-            throw new IllegalStateException("Workout Session missing ROUTINE value");
-        }
+        ParsingUtils.validateStringInput(routineName, "ROUTINE NAME", 100);
+
         
         List<PerformedExercise> eList = new ArrayList<>();
         List<List<String>> sessionExercises = ParsingUtils.extractBlocks(sessionLines, EX_START, EX_END);
+        int count =0;
         for (List<String> exercise: sessionExercises){
-            parseOneExercise(exercise,exerciseById);
+            count++;
+            try{
+                eList.add(parseOneExercise(exercise,library));
+            }
+            catch (IllegalStateException e){
+                throw new IllegalStateException("Error parsing exercise "+count,e);
+            }
+            
         }
 
         return new WorkoutSession(routineName,stamp,eList);
         
     }
 
-    private static PerformedExercise parseOneExercise(List<String> lines ,Map<UUID,Exercise> exerciseById){
+    private static PerformedExercise parseOneExercise(List<String> lines ,ExerciseLibrary library){
         String kind = null;
         String name = null;
         String desc = null;
@@ -126,7 +146,7 @@ public class HistoryStorage {
             else if (line.startsWith("DESC")){desc = FormatUtils.valueAfterColon(line);}
             else if (line.startsWith("MUSCLES")) {
                 try{
-                    muscles = parseMuscles(FormatUtils.valueAfterColon(line));
+                    muscles = ParsingUtils.parseMuscles(FormatUtils.valueAfterColon(line));
                 }
                 catch (IllegalStateException e){
                     throw new IllegalStateException
@@ -150,22 +170,18 @@ public class HistoryStorage {
             idx++;
         }
 
-        if (kind == null || kind.isBlank()) {
-            throw new IllegalStateException("Exercise missing KIND value.");
-        }
+        ParsingUtils.validateStringInput(kind, "KIND", 20);
 
-        if (name==null||name.isBlank()){
-            throw new IllegalStateException("Exercise missing NAME value.");
-        }
+        ParsingUtils.validateStringInput(name, "NAME", 100);
 
         Exercise base = null;
 
         if ("CUSTOM".equals(kind)&&id==null){ //throw an error if ID is empty for a custom
-            throw new IllegalArgumentException("ID for custom exercise cannot be empty.");
+            throw new IllegalArgumentException("ID for custom exercise cannot be empty (line "+idx +" ).");
         }
 
         if (id!=null){
-            base = exerciseById.get(id);
+            base = library.getById(id);
         }
         
 
@@ -201,30 +217,6 @@ public class HistoryStorage {
         
         return pe;
     }
-
-    private static Set<Muscles> parseMuscles(String line){
-        EnumSet<Muscles> m = EnumSet.noneOf(Muscles.class);
-        if (line == null || line.isBlank()) return m;
-        String[] mParts = line.split(";");
-
-        for (String part : mParts){
-            String token = part.trim();
-            if (token.isEmpty()) continue;
-            try {
-                m.add(Muscles.valueOf(token));
-            } catch (Exception e){
-                throw new IllegalStateException("Invalid muscle value : ["+token+"]");
-            }
-        }
-        return m;
-    }
-
-    
-
-
-    
-
-
 
     public record LoadResult(
         List<WorkoutSession> sessions,

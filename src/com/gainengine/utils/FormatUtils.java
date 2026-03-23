@@ -1,4 +1,7 @@
+package com.gainengine.utils;
 import java.util.Set;
+
+import com.gainengine.model.Muscles;
 
 public final class FormatUtils {
 

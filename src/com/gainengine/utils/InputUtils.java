@@ -1,3 +1,4 @@
+package com.gainengine.utils;
 import java.util.Scanner;
 import java.util.function.*;
 import java.lang.Double;

@@ -1,3 +1,4 @@
+package com.gainengine.ui;
 import java.util.List;
 import java.util.Map;
 import java.io.IOException;
@@ -11,17 +12,32 @@ import java.util.LinkedHashMap;
 import java.util.Scanner;
 import java.util.UUID;
 
+import com.gainengine.logic.ExerciseFactory;
+import com.gainengine.logic.ExerciseLibrary;
+import com.gainengine.model.Exercise;
+import com.gainengine.model.ExerciseType;
+import com.gainengine.model.Muscles;
+import com.gainengine.model.PerformedExercise;
+import com.gainengine.model.PrType;
+import com.gainengine.model.WorkoutRoutine;
+import com.gainengine.model.WorkoutSession;
+import com.gainengine.storage.CustomStorage;
+import com.gainengine.storage.HistoryStorage;
+import com.gainengine.utils.InputUtils;
+
 
 
 
 public class WorkoutApp {
     private Scanner in;
     Map<String,WorkoutRoutine> routines=new LinkedHashMap<>();
-    List<Exercise> exMenu;
+    
+    private ExerciseLibrary library;
+    
     List<WorkoutSession> history; 
     Map<Exercise,Double> weightPr;
     Map<Exercise,Double> volumePr;
-    Map<UUID,Exercise> exerciseById = new HashMap<>();
+    
     private final List<String> menuLabels = List.of(
         "Exit",
         "Start Routine",
@@ -34,8 +50,8 @@ public class WorkoutApp {
         
     );
 
-    private HistorySaver saver;
-    private HistoryLoader loader;
+    private HistoryStorage historyStorage;
+    private CustomStorage customStorage;
 
     //runnable is something you can run. has method run(). literally that is it
     private final List<Runnable> options = List.of(
@@ -52,29 +68,50 @@ public class WorkoutApp {
 
     public WorkoutApp(Scanner in){
         this.in=in;
+        library = new ExerciseLibrary();
         exMenu=new ArrayList<>();
         history = new ArrayList<>();
         weightPr=new LinkedHashMap<>();
         volumePr=new LinkedHashMap<>();
-        Path p = Path.of("saved_data/session_history.txt");
-        saver = new HistorySaver(p);
-        loader = new HistoryLoader(p);
-        exMenu.clear();
-        exerciseById.clear();
-        for (ExerciseType exT:ExerciseType.values()){
-            Exercise ex=ExerciseFactory.fromType(exT);
-            exerciseById.put(ex.getId(),ex);
-            exMenu.add(ex);
-
-        }
+         
+        historyStorage = new HistoryStorage(Path.of("saved_data/session_history.txt"));
+        customStorage = new CustomStorage(Path.of("saved_data/customs.txt"));
+        
+        
+        
     }
 
     private  void run() {
         
         System.out.println("INITIALIZING GAIN ENGINE...");
-        List<String> warnings;
+
+        for (ExerciseType exT:ExerciseType.values()){
+            Exercise ex=ExerciseFactory.fromType(exT);
+            library.register(ex);
+            exMenu.add(ex);
+        }
+        List<Exercise> customs = new ArrayList<>();
+
         try{
-            HistoryLoader.LoadResult lr = loader.loadAllSessions(exerciseById);
+            System.out.println("Loading customs...");
+            library.registerAll(customStorage.loadCustoms());
+        }
+        catch(IOException e){
+            System.out.println("Error loading customs!!");
+        }
+
+        if (!library.getAllCustoms().isEmpty()){
+            System.out.println("Customs loaded successfully!");
+        }
+        else {
+            System.out.println("No customs created yet!");
+        }
+
+        List<String> warnings;
+
+        
+        try{
+            HistoryStorage.LoadResult lr = historyStorage.loadAllSessions(library);
             history = lr.sessions();
             warnings = lr.warnings();
             
@@ -109,7 +146,11 @@ public class WorkoutApp {
             } else {
                 options.get(choice).run();
             }
+
         }
+
+
+        
 
     }
 
@@ -212,7 +253,6 @@ public class WorkoutApp {
         saveHistorySafely();
         
         
-        
 
     }
 
@@ -231,7 +271,7 @@ public class WorkoutApp {
 
     private void printExerciseList(WorkoutRoutine r){
         int count=1;    
-        for (Exercise ex:exMenu){
+        for (Exercise ex:library.getAll()){
             System.out.printf("%d. %s %s%n",count,ex.getDisplayName(),(r.contains(ex)) ? "[SELECTED]" : "");
             count++;
         }
@@ -446,11 +486,12 @@ public class WorkoutApp {
         CustomData data = promptCustomCreate();
         Exercise e = ExerciseFactory.createCustom(data.name(), data.desc(), data.muscles());
         exMenu.add(e);
-        exerciseById.put(e.getId(),e);
+        library.register(e);
+        saveCustomsSafely();
     }
 
     private void editCustom(){
-        List<Exercise> customs = getCustomExercises();
+        List<Exercise> customs = library.getAllCustoms();
         if (customs.isEmpty()){
             System.out.println("No custom exercises created yet");
             return;
@@ -484,6 +525,7 @@ public class WorkoutApp {
             case 1 -> {     
                 CustomData editData = promptCustomEdit(oldEx);
                 Exercise newEx = ExerciseFactory.loadCustom(oldEx.getId(), editData.name(), editData.desc(),editData.muscles());
+                library.register(newEx);
                 syncExerciseState(oldEx, newEx);
 
                 System.out.println("Changes updated.");
@@ -497,12 +539,14 @@ public class WorkoutApp {
                 }
 
                 syncExerciseState(oldEx,null);
-
+                library.remove(oldEx.getId());
                 System.out.println("Nuked.");
                 
             }
             
         }
+
+        saveCustomsSafely();
 
 
     }
@@ -588,6 +632,10 @@ public class WorkoutApp {
                     history.remove(chosen);
                     System.out.println("Deleted");
                     saveHistorySafely();
+                    if (history.isEmpty()){
+                        System.out.println("History is empty, exiting edit menu.");
+                        break;
+                    }
                 }
             }
             
@@ -654,10 +702,19 @@ public class WorkoutApp {
 
     private void saveHistorySafely(){
         try {
-            saver.saveAllSessions(history);
+            historyStorage.saveAllSessions(history);
             System.out.println("Changes saved succesfully!!");
         } catch (IOException e){
-            System.out.println("Could not save history. Try again later");
+            System.err.println("Could not save history. Try again later");
+        }
+    }
+
+    private void saveCustomsSafely(){
+        try {
+            customStorage.saveAllCustoms(library.getAllCustoms());
+            System.out.println("Custom exercise saved!");
+        } catch (IOException e){
+            System.err.println("Error saving");
         }
     }
 
@@ -721,14 +778,12 @@ public class WorkoutApp {
 
     
 
-    private List<Exercise> getCustomExercises() {
-            return exMenu.stream().filter(e -> e.getType()==null).toList();
-    }
+    
 
     private void syncExerciseState(Exercise oldEx,Exercise newEx){
 
         if (newEx!=null){
-            exerciseById.put(newEx.getId(),newEx);
+            
             routines.values().forEach(r -> {
                 List<Exercise> updated = r.getExerciseList();
                 Collections.replaceAll(updated, oldEx, newEx);
@@ -737,13 +792,14 @@ public class WorkoutApp {
             if (idx!=-1) exMenu.set(idx,newEx);
             
         } else {
-            exerciseById.remove(oldEx.getId());
+           
             routines.values().forEach(r->r.getExerciseList().removeIf(oldEx::equals));
             exMenu.remove(oldEx);
             
         }
     }
-    
+
+   
 
     private record CustomData(String name, String desc , EnumSet<Muscles> muscles) {};
 }

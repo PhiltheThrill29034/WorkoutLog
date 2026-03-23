@@ -1,7 +1,8 @@
+package com.gainengine.model;
 
 
 
-class WorkoutSet {
+public class WorkoutSet {
 
     private int reps;
     private double weight;

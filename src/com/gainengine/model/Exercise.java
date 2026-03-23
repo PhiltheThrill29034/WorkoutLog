@@ -1,3 +1,4 @@
+package com.gainengine.model;
 
 
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.UUID;
 //Exercise class. Represents the template of the Exercise
 //Holds values like : name , description , muscles trained
 
-class Exercise {
+public class Exercise {
 
     
     

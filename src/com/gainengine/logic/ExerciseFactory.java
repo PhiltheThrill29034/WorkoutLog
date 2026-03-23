@@ -1,5 +1,10 @@
+package com.gainengine.logic;
 import java.util.Set;
 import java.util.UUID;
+
+import com.gainengine.model.Exercise;
+import com.gainengine.model.ExerciseType;
+import com.gainengine.model.Muscles;
 
 public class ExerciseFactory {
     

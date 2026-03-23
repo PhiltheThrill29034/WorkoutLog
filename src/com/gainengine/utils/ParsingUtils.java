@@ -1,7 +1,10 @@
+package com.gainengine.utils;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+
+import com.gainengine.model.Muscles;
 
 public final class ParsingUtils {
     

@@ -1,3 +1,4 @@
+package com.gainengine.logic;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -8,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import com.gainengine.model.Exercise;
 
 public class ExerciseLibrary {
     

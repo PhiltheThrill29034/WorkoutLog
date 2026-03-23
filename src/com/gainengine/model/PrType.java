@@ -1,3 +1,4 @@
+package com.gainengine.model;
 
 public enum PrType{
 

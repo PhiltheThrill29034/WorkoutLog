@@ -1,3 +1,4 @@
+package com.gainengine.storage;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
@@ -6,6 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
+import com.gainengine.logic.ExerciseFactory;
+import com.gainengine.model.Exercise;
+import com.gainengine.model.Muscles;
+import com.gainengine.utils.FormatUtils;
+import com.gainengine.utils.ParsingUtils;
+
 import java.io.IOException;
 import java.nio.file.Files;
 
@@ -17,7 +25,7 @@ public class CustomStorage {
 
     private final Path path;
 
-    CustomStorage (Path p){
+    public CustomStorage (Path p){
         this.path=p;
     }
 

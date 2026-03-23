@@ -1,6 +1,10 @@
+package com.gainengine.model;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+
+import com.gainengine.logic.ExerciseFactory;
+
 import java.util.HashMap;
 
 public class WorkoutRoutine {
