@@ -69,7 +69,7 @@ public class WorkoutApp {
     public WorkoutApp(Scanner in){
         this.in=in;
         library = new ExerciseLibrary();
-        exMenu=new ArrayList<>();
+        
         history = new ArrayList<>();
         weightPr=new LinkedHashMap<>();
         volumePr=new LinkedHashMap<>();
@@ -88,7 +88,7 @@ public class WorkoutApp {
         for (ExerciseType exT:ExerciseType.values()){
             Exercise ex=ExerciseFactory.fromType(exT);
             library.register(ex);
-            exMenu.add(ex);
+            
         }
         List<Exercise> customs = new ArrayList<>();
 
@@ -204,10 +204,10 @@ public class WorkoutApp {
             InputUtils.readIntAndRetry
             (this.in,"Pick an exercise to toggle, or exit (0) : "
             ,"Enter a valid exercise from the menu: "
-            ,0,exMenu.size());
+            ,0,library.getSize());
 
             if (choice==0) break;
-            Exercise template=exMenu.get(choice-1);
+            Exercise template=library.getByIndex(choice-1);
 
             boolean dup = routine.contains(template);
             if (!dup){
@@ -331,16 +331,16 @@ public class WorkoutApp {
     private void addExerciseToRoutine(WorkoutRoutine picked){
         System.out.println("Which exercises would you like to add?");
         printExerciseList(picked);
-        int choice=InputUtils.readIntAndRetry(this.in,"Choose one of the following exercises to add, or 0 to finish adding: ", "Pick a valid exercise number: ",0,exMenu.size());
+        int choice=InputUtils.readIntAndRetry(this.in,"Choose one of the following exercises to add, or 0 to finish adding: ", "Pick a valid exercise number: ",0,library.getSize());
         while (choice!=0){
-            Exercise template=exMenu.get(choice-1);
+            Exercise template=library.getByIndex(choice-1);
             Exercise ex = ExerciseFactory.freshCopyOf(template);
             if (!picked.addExercise(ex)){
                 System.out.printf("Cannot add %s twice.%n",ex.getName());
             }else {
                 System.out.printf("Added %s%n",ex.getName());
             }
-            choice=InputUtils.readIntAndRetry(this.in,"Pick another exercise, or exit: ","Enter a valid exercise from the menu: ",0,exMenu.size());
+            choice=InputUtils.readIntAndRetry(this.in,"Pick another exercise, or exit: ","Enter a valid exercise from the menu: ",0,library.getSize());
         }
         System.out.println("New routine: ");
         System.out.println(picked.toString());
@@ -485,7 +485,7 @@ public class WorkoutApp {
         System.out.println("===== CREATE CUSTOM EXERCISE =====");
         CustomData data = promptCustomCreate();
         Exercise e = ExerciseFactory.createCustom(data.name(), data.desc(), data.muscles());
-        exMenu.add(e);
+        
         library.register(e);
         saveCustomsSafely();
     }

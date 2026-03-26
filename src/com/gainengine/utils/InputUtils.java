@@ -6,7 +6,7 @@ import java.lang.Double;
 public class InputUtils {
 
 
-    static String readNonEmpty (Scanner in, String prompt){
+    public static String readNonEmpty (Scanner in, String prompt){
         System.out.print(prompt);
         String input = in.nextLine();
         while (input.isBlank()) {
@@ -17,13 +17,13 @@ public class InputUtils {
         return input;
     }
 
-    static String readOptional(Scanner in, String prompt, String defaultVal){
+    public static String readOptional(Scanner in, String prompt, String defaultVal){
         System.out.print(prompt);
         String input = in.nextLine();
         return (input.isBlank()) ? defaultVal : input;
     }
 
-    static <T extends Number> T readNumberAndRetry(Scanner in,String prompt,String errorPrompt,Function<String,T> parser,T minRange,T maxRange){
+    public static <T extends Number> T readNumberAndRetry(Scanner in,String prompt,String errorPrompt,Function<String,T> parser,T minRange,T maxRange){
         System.out.print(prompt);
         while (true){
             try{
@@ -34,7 +34,7 @@ public class InputUtils {
         }
     }
 
-    static <T extends Number> T readNumber(Scanner in,String prompt,String errorPrompt,Function<String,T> parser,T minRange,T maxRange) throws InvalidInputException{
+    public static <T extends Number> T readNumber(Scanner in,String prompt,String errorPrompt,Function<String,T> parser,T minRange,T maxRange) throws InvalidInputException{
 
         try {
             
@@ -49,11 +49,11 @@ public class InputUtils {
 
     }
 
-    static int readIntAndRetry(Scanner in,String prompt,String errorPrompt,int minRange,int maxRange){
+    public static int readIntAndRetry(Scanner in,String prompt,String errorPrompt,int minRange,int maxRange){
         return readNumberAndRetry(in, prompt, errorPrompt, Integer::parseInt, minRange, maxRange);
     }
 
-    static int readInt(Scanner in,String prompt,String errorPrompt,int minRange,int maxRange) throws InvalidInputException{
+    public static int readInt(Scanner in,String prompt,String errorPrompt,int minRange,int maxRange) throws InvalidInputException{
         //in the signature of the method, we put throws InvalidInputException. This way, we 
         //force the caller to handle it
         return readNumber(in, prompt, errorPrompt, Integer::parseInt, minRange, maxRange);
@@ -61,17 +61,17 @@ public class InputUtils {
 
 
 
-    static double readDoubleAndRetry(Scanner in,String prompt,String errorPrompt,double minRange,double maxRange){
+    public static double readDoubleAndRetry(Scanner in,String prompt,String errorPrompt,double minRange,double maxRange){
         return  readNumberAndRetry(in, prompt, errorPrompt, Double::parseDouble, minRange, maxRange);
     }
 
-    static double readDouble(Scanner in,String prompt,String errorPrompt,double minRange,double maxRange) throws InvalidInputException{
+    public static double readDouble(Scanner in,String prompt,String errorPrompt,double minRange,double maxRange) throws InvalidInputException{
         //in the signature of the method, we put throws InvalidInputException. This way, we 
         //force the caller to handle it
         return readNumber(in, prompt, errorPrompt, Double::parseDouble, minRange, maxRange);
     }
 
-    static char checkChar(String input,char min,char max){
+    public static char checkChar(String input,char min,char max){
             
         if (input.length()!=1){
             throw new IllegalArgumentException("Enter a single letter");
@@ -91,4 +91,4 @@ class InvalidInputException extends Exception{ //custom exception we throw when 
     public InvalidInputException(String message){
         super(message);
     }
-}
+} 

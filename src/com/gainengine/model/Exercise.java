@@ -27,8 +27,8 @@ public class Exercise {
     
 
     
-    //no publicity identifier - package private so only factory in the same package can use it
-    Exercise(UUID id,ExerciseType type, String name,String desc, Set<Muscles> muscles){ 
+    //public identifier - need cross - package visibility
+    public Exercise(UUID id,ExerciseType type, String name,String desc, Set<Muscles> muscles){ 
         
         this.id=id;
         this.type=type;

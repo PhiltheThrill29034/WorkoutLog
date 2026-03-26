@@ -72,4 +72,16 @@ public class ExerciseLibrary {
         return this.cacheAll; // Return the snapshot (New or Existing)
     }
 
+    public int getSize(){
+        return exerciseById.size();
+    }
+
+    public Exercise getByIndex(int index){
+        List<Exercise> asList = new ArrayList<>(exerciseById.values());
+        if (index>asList.size() || index <0 ){
+            throw new IllegalArgumentException("Invalid exercise index given.");
+        }
+        return asList.get(index);
+    }
+
 }
