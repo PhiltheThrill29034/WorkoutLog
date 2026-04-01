@@ -26,33 +26,57 @@ import java.util.Map;
 import java.time.LocalDateTime;
 
 
-public class HistoryStorage {
+public class HistoryStorage implements StorageProvider<WorkoutSession> {
 
     private static final  String SESSION_START = "WORKOUT SESSION";
     private static final  String SESSION_END = "END_SESSION";
     private static final  String EX_START = "EXERCISE";
     private static final String EX_END = "END_EX";
+    private final ExerciseLibrary library;
 
     private final Path path;
 
-    public HistoryStorage(Path path){
+    public HistoryStorage(Path path,ExerciseLibrary library){
         this.path=path;
+        this.library=library;
     }
 
-    public LoadResult loadAllSessions(ExerciseLibrary library) throws IOException{
+    void appendSession(WorkoutSession s) throws IOException{
+        List<String> lines = sessionToLines(s);
+        
+        write(lines,StandardOpenOption.CREATE,StandardOpenOption.APPEND);
+        
+    }
+
+
+    void write(List<String> lines,StandardOpenOption... opts) throws IOException{ //varargs!!
+        if (path.getParent()!=null) Files.createDirectories(path.getParent());
+        Files.write(path,lines,opts);
+    }
+
+    public void save(List<WorkoutSession> sList) throws IOException{
+        List<String> allLines = new ArrayList<>();
+        
+        for (WorkoutSession s : sList){
+            allLines.addAll(sessionToLines(s));
+        }
+        write(allLines,StandardOpenOption.CREATE);
+    }
+
+    public LoadResult<WorkoutSession> loadAll() throws IOException{
         
             if (!Files.exists(path)){
-                return new LoadResult(new ArrayList<>(), new ArrayList<>());
+                return LoadResult.empty();
             }
             List<String> lines = Files.readAllLines(path);
             List<String> warnings = new ArrayList<>();
-            List<WorkoutSession> sList = parseAllSessions(lines, warnings,library);
-            return new LoadResult(sList, warnings); 
+            List<WorkoutSession> sList = parseAllSessions(lines, warnings);
+            return new LoadResult<WorkoutSession> (sList, warnings); 
     }
 
     
 
-    private static List<WorkoutSession> parseAllSessions(List<String> lines,List<String> warnings,ExerciseLibrary library){
+    private List<WorkoutSession> parseAllSessions(List<String> lines,List<String> warnings){
 
         List<List<String>> blocks = ParsingUtils.extractBlocks(lines, SESSION_START, SESSION_END);
         List<WorkoutSession> sessionList = new ArrayList<>();
@@ -60,7 +84,7 @@ public class HistoryStorage {
         for (List<String> block: blocks){
                 count++;
                 try {
-                    WorkoutSession result = parseSession(block, library);
+                    WorkoutSession result = parseSession(block);
                     sessionList.add(result);
                 } catch (IllegalStateException e){
                     warnings.add("Skipping invalid session at block "+count);
@@ -77,7 +101,7 @@ public class HistoryStorage {
     }
 
 
-    private static WorkoutSession parseSession (List<String> sessionLines,ExerciseLibrary library){
+    private WorkoutSession parseSession (List<String> sessionLines){
         
         LocalDateTime stamp = null;
         String routineName="";
@@ -114,7 +138,7 @@ public class HistoryStorage {
         for (List<String> exercise: sessionExercises){
             count++;
             try{
-                eList.add(parseOneExercise(exercise,library));
+                eList.add(parseOneExercise(exercise));
             }
             catch (IllegalStateException e){
                 throw new IllegalStateException("Error parsing exercise "+count,e);
@@ -126,7 +150,7 @@ public class HistoryStorage {
         
     }
 
-    private static PerformedExercise parseOneExercise(List<String> lines ,ExerciseLibrary library){
+    private PerformedExercise parseOneExercise(List<String> lines){
         String kind = null;
         String name = null;
         String desc = null;
@@ -167,7 +191,7 @@ public class HistoryStorage {
                 break;
             }
 
-            idx++;
+            
         }
 
         ParsingUtils.validateStringInput(kind, "KIND", 20);
@@ -218,34 +242,9 @@ public class HistoryStorage {
         return pe;
     }
 
-    public record LoadResult(
-        List<WorkoutSession> sessions,
-        List<String> warnings
-    ) {} //a record can be thought of as a mini class that holds objects
-    //java creates getters : sessions() and warnings()
-    //constructor too
+    
 
-    void appendSession(WorkoutSession s) throws IOException{
-        List<String> lines = sessionToLines(s);
-        
-        write(lines,StandardOpenOption.CREATE,StandardOpenOption.APPEND);
-        
-    }
-
-
-    void write(List<String> lines,StandardOpenOption... opts) throws IOException{ //varargs!!
-        if (path.getParent()!=null) Files.createDirectories(path.getParent());
-        Files.write(path,lines,opts);
-    }
-
-    public void saveAllSessions(List<WorkoutSession> sList) throws IOException{
-        List<String> allLines = new ArrayList<>();
-        
-        for (WorkoutSession s : sList){
-            allLines.addAll(sessionToLines(s));
-        }
-        write(allLines,StandardOpenOption.CREATE);
-    }
+    
 
     private static List<String> sessionToLines(WorkoutSession s){
         List<String> lines = new ArrayList<>();

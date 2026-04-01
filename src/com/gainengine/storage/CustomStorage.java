@@ -11,13 +11,14 @@ import java.util.UUID;
 import com.gainengine.logic.ExerciseFactory;
 import com.gainengine.model.Exercise;
 import com.gainengine.model.Muscles;
+import com.gainengine.model.WorkoutSession;
 import com.gainengine.utils.FormatUtils;
 import com.gainengine.utils.ParsingUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
 
-public class CustomStorage {
+public class CustomStorage implements StorageProvider<Exercise> {
     
     
     private static final  String EX_START = "EXERCISE";
@@ -34,7 +35,7 @@ public class CustomStorage {
         Files.write(path,lines,opts);
     }
 
-    public void saveAllCustoms(List<Exercise> customs) throws IOException{
+    public void save(List<Exercise> customs) throws IOException{
         List<String> allLines = new ArrayList<>();
         for (Exercise e: customs){
             allLines.addAll(customExerciseToLines(e));
@@ -63,11 +64,12 @@ public class CustomStorage {
         return lines;
     }
 
-    public List<Exercise> loadCustoms() throws IOException{
+    public LoadResult<Exercise> loadAll() throws IOException{
         
         List<Exercise> customs = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
         if (!Files.exists(path)){
-            return customs;
+            return LoadResult.empty();
         }
         List<String> lines = Files.readAllLines(path);
         List<List<String>> blocks = ParsingUtils.extractBlocks(lines,EX_START,EX_END);
@@ -79,12 +81,12 @@ public class CustomStorage {
                 customs.add(e);
             }
             catch (IllegalStateException e){
-                System.err.println("Error parsing block "+count);
-                System.err.println("Details: "+e.getMessage());
+                warnings.add("Error parsing block "+count+"\nDetails: "+e.getMessage());
+            
             }
         }
 
-        return customs;
+        return new LoadResult<>(customs,warnings);
     }
 
     private static Exercise parseOneExercise(List<String> lines){

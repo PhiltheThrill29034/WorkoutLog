@@ -23,6 +23,8 @@ import com.gainengine.model.WorkoutRoutine;
 import com.gainengine.model.WorkoutSession;
 import com.gainengine.storage.CustomStorage;
 import com.gainengine.storage.HistoryStorage;
+import com.gainengine.storage.LoadResult;
+import com.gainengine.storage.StorageProvider;
 import com.gainengine.utils.InputUtils;
 
 
@@ -50,8 +52,8 @@ public class WorkoutApp {
         
     );
 
-    private HistoryStorage historyStorage;
-    private CustomStorage customStorage;
+    private StorageProvider<WorkoutSession> historyStorage;
+    private StorageProvider<Exercise> customStorage;
 
     //runnable is something you can run. has method run(). literally that is it
     private final List<Runnable> options = List.of(
@@ -74,67 +76,50 @@ public class WorkoutApp {
         weightPr=new LinkedHashMap<>();
         volumePr=new LinkedHashMap<>();
          
-        historyStorage = new HistoryStorage(Path.of("saved_data/session_history.txt"));
+        historyStorage = new HistoryStorage(Path.of("saved_data/session_history.txt"),library);
         customStorage = new CustomStorage(Path.of("saved_data/customs.txt"));
         
         
         
     }
 
+    private void populateBaseLibrary(){
+        for (ExerciseType exT:ExerciseType.values()){
+            Exercise ex=ExerciseFactory.fromType(exT);
+            library.register(ex); 
+        }
+    }
+
+    private void loadCustomExercises() {
+        try {
+            LoadResult<Exercise> result = customStorage.loadAll(); // Using the Interface!
+            
+            
+            if (!result.data().isEmpty()) {
+                library.registerAll(result.data());
+                System.out.println("✅ Customs loaded successfully!");
+            }
+            // If there were warnings in customs, print 'em here
+            System.out.println(result.getWarnings());
+            
+        } catch (IOException e) {
+            System.err.println("❌ Critical Error: Could not load customs.");
+        }
+    }
+
+
+
     private  void run() {
         
         System.out.println("INITIALIZING GAIN ENGINE...");
 
-        for (ExerciseType exT:ExerciseType.values()){
-            Exercise ex=ExerciseFactory.fromType(exT);
-            library.register(ex);
-            
-        }
+        populateBaseLibrary();
+
         List<Exercise> customs = new ArrayList<>();
 
-        try{
-            System.out.println("Loading customs...");
-            library.registerAll(customStorage.loadCustoms());
-        }
-        catch(IOException e){
-            System.out.println("Error loading customs!!");
-        }
+        loadCustomExercises();
 
-        if (!library.getAllCustoms().isEmpty()){
-            System.out.println("Customs loaded successfully!");
-        }
-        else {
-            System.out.println("No customs created yet!");
-        }
-
-        List<String> warnings;
-
-        
-        try{
-            HistoryStorage.LoadResult lr = historyStorage.loadAllSessions(library);
-            history = lr.sessions();
-            warnings = lr.warnings();
-            
-        }
-        catch (IOException e){
-            System.out.println("Couldn't load history!! FATASS " + e.getMessage());
-            warnings = new ArrayList<>();
-        }
-
-        if (!warnings.isEmpty()){
-            for (String w : warnings){
-                System.err.println(w); //printing warnings to err (not normal output)
-            }
-        }
-
-        if (!history.isEmpty()){
-            System.out.println("Gains loaded successfully");
-            System.out.println("Loading past PR's ...");
-            prRecomputer();
-            System.out.println("Done!");
-        } else {
-            System.out.println("Shit, first time working out?! Get to work fatty");
-        }
+        //TODO: loadWorkoutHistory and recompute pr's
         
         boolean running=true;
         while (running){
@@ -458,7 +443,7 @@ public class WorkoutApp {
                     session.addSet(userChoice, weight, reps); 
                     
                     if (checkPr(pe.getExercise(),weight,weightPr)){
-                        System.out.printf("🔥 NEW WEIGHT PR on %s: %.2f. GOOD SHIT!!%n",pe.getName(),weight);
+                        System.out.printf("NEW WEIGHT PR on %s: %.2f. GOOD SHIT!!%n",pe.getName(),weight);
                         session.recordPr(PrType.WEIGHT,pe.getExercise(),weight);
                     }
 
@@ -788,13 +773,13 @@ public class WorkoutApp {
                 List<Exercise> updated = r.getExerciseList();
                 Collections.replaceAll(updated, oldEx, newEx);
             });
-            int idx = exMenu.indexOf(oldEx);
-            if (idx!=-1) exMenu.set(idx,newEx);
+            //int idx = exMenu.indexOf(oldEx);
+            //if (idx!=-1) exMenu.set(idx,newEx);
             
         } else {
            
             routines.values().forEach(r->r.getExerciseList().removeIf(oldEx::equals));
-            exMenu.remove(oldEx);
+            //exMenu.remove(oldEx);
             
         }
     }
