@@ -5,9 +5,10 @@ import java.util.List;
 
 public record LoadResult<T>(List<T> data, List<String> warnings) {
     public boolean hasWarnings(){
-        return warnings.isEmpty();
+        return !warnings.isEmpty();
     }
     public String getWarnings(){
+        if (!hasWarnings()) return "";
         StringBuilder sb = new StringBuilder();
         sb.append("WARNINGS:");
         int count=1;

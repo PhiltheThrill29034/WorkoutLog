@@ -92,19 +92,47 @@ public class WorkoutApp {
 
     private void loadCustomExercises() {
         try {
+            System.out.println("Loading custom exercises...");
+            Thread.sleep(1000);
             LoadResult<Exercise> result = customStorage.loadAll(); // Using the Interface!
             
             
             if (!result.data().isEmpty()) {
                 library.registerAll(result.data());
-                System.out.println("✅ Customs loaded successfully!");
+                System.out.println("Customs loaded successfully!");
             }
             // If there were warnings in customs, print 'em here
-            System.out.println(result.getWarnings());
+            if (result.hasWarnings()) System.out.println(result.getWarnings());
             
         } catch (IOException e) {
-            System.err.println("❌ Critical Error: Could not load customs.");
+            System.err.println("Critical Error: Could not load customs.");
+        } catch (InterruptedException e) {}
+    }
+
+    private void loadWorkoutHistory(){
+        try{
+            System.out.println("Loading past sessions...");
+            Thread.sleep(1000);
+            LoadResult<WorkoutSession> result = historyStorage.loadAll();
+            history = result.data();
+            if (!history.isEmpty()){
+                System.out.printf("Loaded %d sessions!%n", history.size());
+                System.out.println("Recomputing past PR's...");
+                Thread.sleep(1000);
+                prRecomputer();
+                System.out.println("Done!");
+            } else {
+                System.out.println("No history found, time to work!");
+            }
+
+           if (result.hasWarnings()) System.out.println(result.getWarnings()); 
+
+        } catch (IOException e ){
+            System.out.println("An error occured loading customs...");
         }
+        catch (InterruptedException e) {}
+        
+
     }
 
 
@@ -115,11 +143,11 @@ public class WorkoutApp {
 
         populateBaseLibrary();
 
-        List<Exercise> customs = new ArrayList<>();
+        
 
         loadCustomExercises();
 
-        //TODO: loadWorkoutHistory and recompute pr's
+        loadWorkoutHistory();
         
         boolean running=true;
         while (running){
@@ -192,7 +220,7 @@ public class WorkoutApp {
             ,0,library.getSize());
 
             if (choice==0) break;
-            Exercise template=library.getByIndex(choice-1);
+            Exercise template=library.getAll().get(choice-1);
 
             boolean dup = routine.contains(template);
             if (!dup){
@@ -318,7 +346,7 @@ public class WorkoutApp {
         printExerciseList(picked);
         int choice=InputUtils.readIntAndRetry(this.in,"Choose one of the following exercises to add, or 0 to finish adding: ", "Pick a valid exercise number: ",0,library.getSize());
         while (choice!=0){
-            Exercise template=library.getByIndex(choice-1);
+            Exercise template=library.getAll().get(choice-1);
             Exercise ex = ExerciseFactory.freshCopyOf(template);
             if (!picked.addExercise(ex)){
                 System.out.printf("Cannot add %s twice.%n",ex.getName());
@@ -523,8 +551,9 @@ public class WorkoutApp {
                     return;
                 }
 
-                syncExerciseState(oldEx,null);
                 library.remove(oldEx.getId());
+                syncExerciseState(oldEx,null);
+                
                 System.out.println("Nuked.");
                 
             }
@@ -687,7 +716,7 @@ public class WorkoutApp {
 
     private void saveHistorySafely(){
         try {
-            historyStorage.saveAllSessions(history);
+            historyStorage.save(history);
             System.out.println("Changes saved succesfully!!");
         } catch (IOException e){
             System.err.println("Could not save history. Try again later");
@@ -696,7 +725,7 @@ public class WorkoutApp {
 
     private void saveCustomsSafely(){
         try {
-            customStorage.saveAllCustoms(library.getAllCustoms());
+            customStorage.save(library.getAllCustoms());
             System.out.println("Custom exercise saved!");
         } catch (IOException e){
             System.err.println("Error saving");
@@ -773,13 +802,12 @@ public class WorkoutApp {
                 List<Exercise> updated = r.getExerciseList();
                 Collections.replaceAll(updated, oldEx, newEx);
             });
-            //int idx = exMenu.indexOf(oldEx);
-            //if (idx!=-1) exMenu.set(idx,newEx);
+           
             
         } else {
            
             routines.values().forEach(r->r.getExerciseList().removeIf(oldEx::equals));
-            //exMenu.remove(oldEx);
+            
             
         }
     }

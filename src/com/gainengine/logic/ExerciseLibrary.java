@@ -76,12 +76,12 @@ public class ExerciseLibrary {
         return exerciseById.size();
     }
 
-    public Exercise getByIndex(int index){
+    /* public Exercise getByIndex(int index){
         List<Exercise> asList = new ArrayList<>(exerciseById.values());
         if (index>asList.size() || index <0 ){
             throw new IllegalArgumentException("Invalid exercise index given.");
         }
         return asList.get(index);
-    }
+    } */
 
 }
