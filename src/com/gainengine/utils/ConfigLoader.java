@@ -12,7 +12,7 @@ public class ConfigLoader {
         try (FileInputStream in = new FileInputStream("config/config.properties")) {
             props.load(in); //this loads all the key-value pairs from the specified file.
         } catch (IOException e) {
-            System.err.println("⚠️ Warning: config.properties not found. Using internal defaults.");
+            System.err.println("Warning: config.properties not found. Using internal defaults.");
         }
     }
 
@@ -20,3 +20,5 @@ public class ConfigLoader {
         return props.getProperty(key,defVal);
     }
 }
+
+

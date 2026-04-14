@@ -7,6 +7,11 @@ public record LoadResult<T>(List<T> data, List<String> warnings) {
     public boolean hasWarnings(){
         return !warnings.isEmpty();
     }
+
+    public boolean emptyData(){
+        return data.isEmpty();
+    }
+    
     public String getWarnings(){
         if (!hasWarnings()) return "";
         StringBuilder sb = new StringBuilder();

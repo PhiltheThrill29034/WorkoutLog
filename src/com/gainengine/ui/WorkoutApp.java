@@ -23,8 +23,10 @@ import com.gainengine.model.WorkoutRoutine;
 import com.gainengine.model.WorkoutSession;
 import com.gainengine.storage.CustomStorage;
 import com.gainengine.storage.HistoryStorage;
+import com.gainengine.storage.RoutineStorage;
 import com.gainengine.storage.LoadResult;
 import com.gainengine.storage.StorageProvider;
+import com.gainengine.utils.ConfigLoader;
 import com.gainengine.utils.InputUtils;
 
 
@@ -54,6 +56,7 @@ public class WorkoutApp {
 
     private StorageProvider<WorkoutSession> historyStorage;
     private StorageProvider<Exercise> customStorage;
+    private StorageProvider<WorkoutRoutine> routineStorage;
 
     //runnable is something you can run. has method run(). literally that is it
     private final List<Runnable> options = List.of(
@@ -75,9 +78,12 @@ public class WorkoutApp {
         history = new ArrayList<>();
         weightPr=new LinkedHashMap<>();
         volumePr=new LinkedHashMap<>();
-         
-        historyStorage = new HistoryStorage(Path.of("saved_data/session_history.txt"),library);
-        customStorage = new CustomStorage(Path.of("saved_data/customs.txt"));
+        Path historyPath = Path.of(ConfigLoader.get("storage.history.path","saved_data/session_history.txt"));
+        historyStorage = new HistoryStorage(historyPath,library);
+        Path customPath = Path.of(ConfigLoader.get("storage.customs.path","saved_data/customs.txt"));
+        customStorage = new CustomStorage(customPath);
+        Path routinePath = Path.of(ConfigLoader.get("storage.routines.path","saved_data/routines.txt"));
+        routineStorage = new RoutineStorage(routinePath,library);
         
         
         
@@ -100,9 +106,14 @@ public class WorkoutApp {
             if (!result.data().isEmpty()) {
                 library.registerAll(result.data());
                 System.out.println("Customs loaded successfully!");
+                
+            } else {
+                System.out.println("No customs created yet!");
             }
             // If there were warnings in customs, print 'em here
             if (result.hasWarnings()) System.out.println(result.getWarnings());
+
+            Thread.sleep(1000);
             
         } catch (IOException e) {
             System.err.println("Critical Error: Could not load customs.");
@@ -114,16 +125,21 @@ public class WorkoutApp {
             System.out.println("Loading past sessions...");
             Thread.sleep(1000);
             LoadResult<WorkoutSession> result = historyStorage.loadAll();
-            history = result.data();
-            if (!history.isEmpty()){
+            
+            if (!result.emptyData()){
+                history = result.data();
                 System.out.printf("Loaded %d sessions!%n", history.size());
+                Thread.sleep(1000);
                 System.out.println("Recomputing past PR's...");
                 Thread.sleep(1000);
                 prRecomputer();
+                Thread.sleep(1000);
                 System.out.println("Done!");
             } else {
                 System.out.println("No history found, time to work!");
             }
+
+            Thread.sleep(1000);
 
            if (result.hasWarnings()) System.out.println(result.getWarnings()); 
 
@@ -135,17 +151,47 @@ public class WorkoutApp {
 
     }
 
+    private void loadRoutines(){
+        
+        try{
+            System.out.println("Loading your routines...");
+            Thread.sleep(2000);
+            LoadResult<WorkoutRoutine> result = routineStorage.loadAll();
+
+            if (!result.emptyData()){
+                for (WorkoutRoutine r: result.data()){
+                    routines.put(r.getName(),r);
+                }
+                System.out.println(routines.size()+" routines loaded!");
+            } else {
+                System.out.println("No routines found, time to create some!");
+            }
+
+            if (result.hasWarnings()){
+                System.out.println("There are warnings regarding the loading of your routines. Printing...");
+                System.out.println(result.getWarnings());
+            }
+        } catch (IOException e){
+            System.err.println("An error occured loading your routines...");
+        } catch (InterruptedException e) {}
+
+        
+    }
+
 
 
     private  void run() {
         
         System.out.println("INITIALIZING GAIN ENGINE...");
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {}
 
         populateBaseLibrary();
 
-        
-
         loadCustomExercises();
+
+        loadRoutines();
 
         loadWorkoutHistory();
         
@@ -252,6 +298,7 @@ public class WorkoutApp {
         }
 
         routines.put(name.toLowerCase(),routine);
+        saveSafely(routineStorage, new ArrayList<>(routines.values()), "Saved routine!");
         System.out.printf("Built and added [%s] to your routines%n",name);
     }
 
@@ -263,7 +310,7 @@ public class WorkoutApp {
         sessionModifier(sesh);
 
         history.add(sesh);
-        saveHistorySafely();
+        saveSafely(historyStorage,history,"Saved!");
         
         
 
@@ -357,6 +404,7 @@ public class WorkoutApp {
         }
         System.out.println("New routine: ");
         System.out.println(picked.toString());
+        saveSafely(routineStorage, new ArrayList<>(routines.values()), "Saved changes!");
     }  
 
     private void removeExerciseFromRoutine(WorkoutRoutine picked){ //removes an exercise from picked routine.
@@ -381,6 +429,7 @@ public class WorkoutApp {
         }
         System.out.println("New routine: ");
         System.out.println(picked.toString());
+        saveSafely(routineStorage, new ArrayList<>(routines.values()), "Saved changes!");
     }
 
     private void renameRoutine(WorkoutRoutine picked){ //chesk this out next time, about renaming
@@ -398,8 +447,8 @@ public class WorkoutApp {
         routines.remove(oldName.toLowerCase());
         picked.setName(newName);
         routines.put(newKey,picked);
-
         System.out.printf("Renamed routine %s to %s%n",oldName,newName);
+        saveSafely(routineStorage, new ArrayList<>(routines.values()), "Saved changes!");
     }
 
     private void deleteRoutine(WorkoutRoutine picked){
@@ -416,6 +465,7 @@ public class WorkoutApp {
         String key=picked.getName().toLowerCase();
         routines.remove(key);
         System.out.printf("Deleted %s from your routines%n",picked.getName());
+        saveSafely(routineStorage, new ArrayList<>(routines.values()), "Saved changes!");
 
     }
 
@@ -500,7 +550,7 @@ public class WorkoutApp {
         Exercise e = ExerciseFactory.createCustom(data.name(), data.desc(), data.muscles());
         
         library.register(e);
-        saveCustomsSafely();
+        saveSafely(customStorage, library.getAllCustoms(), "Saved!");
     }
 
     private void editCustom(){
@@ -560,7 +610,7 @@ public class WorkoutApp {
             
         }
 
-        saveCustomsSafely();
+        saveSafely(customStorage,library.getAllCustoms(),"Saved changes!");
 
 
     }
@@ -640,12 +690,12 @@ public class WorkoutApp {
                 case 2 -> {
                     sessionModifier(chosen);
                     System.out.println("Saved changes: Check!");
-                    saveHistorySafely();
+                    saveSafely(historyStorage,history,"Saved history successfully!");
                 }
                 case 3 -> {
                     history.remove(chosen);
                     System.out.println("Deleted");
-                    saveHistorySafely();
+                     saveSafely(historyStorage,history,"Saved history successfully!");
                     if (history.isEmpty()){
                         System.out.println("History is empty, exiting edit menu.");
                         break;
@@ -714,23 +764,15 @@ public class WorkoutApp {
 
     }
 
-    private void saveHistorySafely(){
+    private <T> void saveSafely(StorageProvider<T> storage,List<T> data, String successMsg){
         try {
-            historyStorage.save(history);
-            System.out.println("Changes saved succesfully!!");
+            storage.save(data);
+            System.out.println(successMsg);
         } catch (IOException e){
-            System.err.println("Could not save history. Try again later");
+            System.err.println("An error occured while saving: " + e.getMessage());
         }
     }
-
-    private void saveCustomsSafely(){
-        try {
-            customStorage.save(library.getAllCustoms());
-            System.out.println("Custom exercise saved!");
-        } catch (IOException e){
-            System.err.println("Error saving");
-        }
-    }
+   
 
     private void prRecomputer(){
 

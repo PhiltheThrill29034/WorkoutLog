@@ -36,4 +36,6 @@ public class ExerciseFactory {
             loadCustom(other.getId(), other.getName(), other.getDesc(), other.getMuscles()) :
             fromType(other.getType());
     }
+
+    
 }

@@ -123,14 +123,11 @@ public class CustomStorage implements StorageProvider<Exercise> {
             
         }
 
-        ParsingUtils.validateStringInput(kind, "KIND", 20);
+        ParsingUtils.validate(kind, "KIND", 20);
 
-        ParsingUtils.validateStringInput(name, "NAME", 100);
+        ParsingUtils.validate(name, "NAME", 100);
 
-
-        if (id==null){
-            throw new IllegalStateException("Exercise missing ID value.");
-        }
+        ParsingUtils.validate(id, "ID");
 
         
 

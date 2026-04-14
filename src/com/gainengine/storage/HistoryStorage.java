@@ -129,7 +129,7 @@ public class HistoryStorage implements StorageProvider<WorkoutSession> {
             throw new IllegalStateException("Workout Session missing DATE value");
         }
 
-        ParsingUtils.validateStringInput(routineName, "ROUTINE NAME", 100);
+        ParsingUtils.validate(routineName, "ROUTINE NAME", 100);
 
         
         List<PerformedExercise> eList = new ArrayList<>();
@@ -194,9 +194,11 @@ public class HistoryStorage implements StorageProvider<WorkoutSession> {
             
         }
 
-        ParsingUtils.validateStringInput(kind, "KIND", 20);
+        ParsingUtils.validate(kind, "KIND", 20);
 
-        ParsingUtils.validateStringInput(name, "NAME", 100);
+        ParsingUtils.validate(name, "NAME", 100);
+
+        ParsingUtils.validate(id,"ID");
 
         Exercise base = null;
 
@@ -204,9 +206,9 @@ public class HistoryStorage implements StorageProvider<WorkoutSession> {
             throw new IllegalArgumentException("ID for custom exercise cannot be empty (line "+idx +" ).");
         }
 
-        if (id!=null){
-            base = library.getById(id);
-        }
+        
+        base = library.getById(id);
+        
         
 
         if (base == null){
@@ -217,7 +219,7 @@ public class HistoryStorage implements StorageProvider<WorkoutSession> {
                     base = ExerciseFactory.fromType(type);
                     //try catch block in case the enum doesn't exist
                 }
-                catch (Exception e){
+                catch (IllegalArgumentException e){
                     throw new IllegalStateException("Exercise has an unknown type value: ["+name+"]");
                 }
             } else if ("CUSTOM".equals(kind)) {

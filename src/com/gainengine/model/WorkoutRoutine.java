@@ -19,6 +19,11 @@ public class WorkoutRoutine {
             
     }
 
+    public WorkoutRoutine(String name, List<Exercise> exList){
+        this.routineName=name;
+        this.exercises = new ArrayList<>(exList);
+    }
+
     public List<Exercise> getExerciseList(){
         return this.exercises;
     }

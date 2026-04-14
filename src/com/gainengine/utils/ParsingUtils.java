@@ -56,12 +56,22 @@ public final class ParsingUtils {
         return blocks;
     }
 
-    public static void validateStringInput(String input, String field, int maxLen){
+    //method overloading:
+    //for String objects, validate checks if the String is not blank 
+    // and within specified length
+    public static void validate(String input, String field, int maxLen){
 
         if (input==null || input.isBlank()){
             throw new IllegalStateException ("ERROR: ["+field+"] cannot be empty");
         } else if (input.length()>maxLen){
             throw new IllegalStateException ("ERROR: ["+field+"] exceeds max length of "+maxLen);
+        }
+    }
+
+    //for any Object, validate checks whether the object is null or not
+    public static void validate(Object obj,String field){
+        if (obj==null){
+            throw new IllegalStateException("ERROR: "+"["+field+"] cannot be null");
         }
     }
 
