@@ -40,7 +40,7 @@ public class CustomStorage implements StorageProvider<Exercise> {
         for (Exercise e: customs){
             allLines.addAll(customExerciseToLines(e));
         }
-        write(allLines,StandardOpenOption.CREATE);
+        write(allLines,StandardOpenOption.CREATE,StandardOpenOption.TRUNCATE_EXISTING);
     }
 
     

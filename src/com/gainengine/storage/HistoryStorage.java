@@ -60,7 +60,7 @@ public class HistoryStorage implements StorageProvider<WorkoutSession> {
         for (WorkoutSession s : sList){
             allLines.addAll(sessionToLines(s));
         }
-        write(allLines,StandardOpenOption.CREATE);
+        write(allLines,StandardOpenOption.CREATE,StandardOpenOption.TRUNCATE_EXISTING);
     }
 
     public LoadResult<WorkoutSession> loadAll() throws IOException{
@@ -281,9 +281,14 @@ public class HistoryStorage implements StorageProvider<WorkoutSession> {
         }
             
     
-        for (WorkoutSet s: pe.getSets()){
-            lines.add("SET:"+s.getWeight()+","+s.getReps());
+        if (pe.getSets().size()==0){
+            lines.add("NO SETS");
+        } else {
+            for (WorkoutSet s: pe.getSets()){
+                lines.add("SET:"+s.getWeight()+","+s.getReps());
+            }
         }
+
 
         lines.add(EX_END);
         lines.add("");

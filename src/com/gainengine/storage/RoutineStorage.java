@@ -92,7 +92,7 @@ public class RoutineStorage implements StorageProvider<WorkoutRoutine> {
                     if (fromId!=null){
                         routineExercises.add(fromId);
                     } else {
-                        warnings.add("Exercise with ID:"+id+"does not exist or had been deleted.");
+                        warnings.add("Exercise with ID:"+id+"does not exist or has been deleted.");
                     }
 
                 } catch (IllegalStateException e){

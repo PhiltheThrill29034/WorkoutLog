@@ -99,7 +99,7 @@ public class WorkoutApp {
     private void loadCustomExercises() {
         try {
             System.out.println("Loading custom exercises...");
-            Thread.sleep(1000);
+            //Thread.sleep(1000);
             LoadResult<Exercise> result = customStorage.loadAll(); // Using the Interface!
             
             
@@ -113,40 +113,40 @@ public class WorkoutApp {
             // If there were warnings in customs, print 'em here
             if (result.hasWarnings()) System.out.println(result.getWarnings());
 
-            Thread.sleep(1000);
+            //Thread.sleep(1000);
             
         } catch (IOException e) {
             System.err.println("Critical Error: Could not load customs.");
-        } catch (InterruptedException e) {}
+        } //catch (InterruptedException e) {}
     }
 
     private void loadWorkoutHistory(){
         try{
             System.out.println("Loading past sessions...");
-            Thread.sleep(1000);
+            //Thread.sleep(1000);
             LoadResult<WorkoutSession> result = historyStorage.loadAll();
             
             if (!result.emptyData()){
                 history = result.data();
                 System.out.printf("Loaded %d sessions!%n", history.size());
-                Thread.sleep(1000);
+                //Thread.sleep(1000);
                 System.out.println("Recomputing past PR's...");
-                Thread.sleep(1000);
+                //Thread.sleep(1000);
                 prRecomputer();
-                Thread.sleep(1000);
+                //Thread.sleep(1000);
                 System.out.println("Done!");
             } else {
                 System.out.println("No history found, time to work!");
             }
 
-            Thread.sleep(1000);
+            //Thread.sleep(1000);
 
            if (result.hasWarnings()) System.out.println(result.getWarnings()); 
 
         } catch (IOException e ){
             System.out.println("An error occured loading customs...");
         }
-        catch (InterruptedException e) {}
+        //catch (InterruptedException e) {}
         
 
     }
@@ -155,7 +155,7 @@ public class WorkoutApp {
         
         try{
             System.out.println("Loading your routines...");
-            Thread.sleep(2000);
+            //Thread.sleep(2000);
             LoadResult<WorkoutRoutine> result = routineStorage.loadAll();
 
             if (!result.emptyData()){
@@ -165,6 +165,7 @@ public class WorkoutApp {
                 System.out.println(routines.size()+" routines loaded!");
             } else {
                 System.out.println("No routines found, time to create some!");
+                //Thread.sleep(1000);
             }
 
             if (result.hasWarnings()){
@@ -173,7 +174,7 @@ public class WorkoutApp {
             }
         } catch (IOException e){
             System.err.println("An error occured loading your routines...");
-        } catch (InterruptedException e) {}
+        } //catch (InterruptedException e) {}
 
         
     }
@@ -490,7 +491,7 @@ public class WorkoutApp {
         while (choice!=0){
 
             WorkoutRoutine expandR=routineList.get(choice-1);
-            System.out.print(expandR.getExercises());
+            System.out.print(expandR);
             
             choice= InputUtils.readIntAndRetry(this.in,"Pick a routine to expand or 0 to exit\n->","Enter a valid routine number\n->",0,routines.size());
         }
@@ -602,6 +603,10 @@ public class WorkoutApp {
                 }
 
                 library.remove(oldEx.getId());
+                System.out.println("DEBUG: customs after deletion:");
+                for (Exercise e : library.getAllCustoms()) {
+                    System.out.println(e.getName());
+                }
                 syncExerciseState(oldEx,null);
                 
                 System.out.println("Nuked.");

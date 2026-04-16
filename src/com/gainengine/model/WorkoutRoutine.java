@@ -93,11 +93,16 @@ public class WorkoutRoutine {
     public String toString(){
 
         StringBuilder sb=new StringBuilder();
-        sb.append("Routine: ").append(getName()).append("\n");
+        sb.append("=====").append(getName().toUpperCase()).append("====\n");
         if (getRoutineSize()==0) return sb.toString()+"No exercises for this routine";
         for (Exercise ex: exercises){
-            sb.append("\t").append(ex).append("\n");
+            sb.append(ex.getName()).append("\n");
         }
+        sb.append("=========");
+        for (int i=0;i<routineName.length();i++){
+            sb.append("=");
+        }
+        sb.append("\n");
         return sb.toString();
     }
 
